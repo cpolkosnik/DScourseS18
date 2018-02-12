@@ -1,0 +1,28 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{Project 4}
+\author{Conrad Polkosnik}
+\date{February 12, 2018}
+
+\begin{document}
+
+\maketitle
+
+\section{Data Sources}
+Some data sources I would be interested in scraping include anything that has to do with the cryptocurrency market, or the stock market. Also, I believe analyzing market sentiment using the hashtags or mentions in tweets for the coin tickers or stock tickers could be an important variable to analyze when making a trade or investment at a specific time.
+
+\section{Questions to Answer}
+\subsection{Question 5. Part d}
+The type of object for the associated command is a data frame.
+
+\subsection{Question 6. Part 4}
+The class for df1 is a data frame while the class for df is SparkR
+
+\subsection{Question 6. Part 5b}
+If I was to try the previous command on df1 it would not work. The syntax for R and SparkR are not the same.
+
+\subsection{Question 6. Part 6b}
+If I was to try the previous command on df1 it would not work. The syntax for R and SparkR are not the same.
+
+\end{document}
