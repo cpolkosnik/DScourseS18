@@ -1,0 +1,41 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\title{PS6}
+\author{Conrad Polkosnik }
+\date{March 2018}
+
+
+\begin{document}
+\maketitle
+
+\section{Cleaning and Parsing Data}
+To begin, I would like to state that this is a sneak peek into what I've been working on for my final project. I began by pulling historical stock data, using the quantmod package, on Exxon Mobil (XOM) using Yahoo as a source since January 1st, 2015. I then moved on to understand the data of which I have, and made sure the data pulled was consistent. The quantmod package does an excellent job of loading data from the source requested and allowing it to be easily manipulated for whatever the user would like to create.
+
+\section{Visualization}
+\subsection{Visualization 1}
+
+For the first visualization, I simply am showing the price action of Exxon Mobil's stock price from January 1st, 2015 to March 2nd, 2018. Seeing such a graph can help in identifying trends, peaks, and troughs. From personal experience, I have used such analysis to go back and research the events of which were taking place to cause such jumps or drops in price to better understand the price action of the stock I plan on investing in. Understanding such information can give an investor an edge in placing a buy or sell order in the market.
+\break
+\break
+\includegraphics[height=7cm, width = 12cm]{1}
+
+\subsection{Visualization 2}
+For the second visualization, I added some technical analysis to the price action of XOM. The first I would like to talk about are known as Bollinger Bands, created by the famous technical trader John Bollinger. The central concept behind these bands are to identify what traders call, "squeeze" opportunities. A squeeze occurs when the bands move closer together and makes the moving average (which I will explain about in a second) more narrow. Essentially, a "squeeze" signals a period of time with low volatility where traders may find trading opportunities and take advantage. More information can be found here: https://www.investopedia.com/terms/b/bollingerbands.asp
+\break
+\break
+The Moving Average Convergence Divergence (MACD) is a trend-following momentum indication. The MACD shows a relationship between two different moving averages. A famously used pair would be the EMA 26 and EMA 12, with "EMA" meaning Exponential moving average, and the "26" and "12" known as the 26-day period and 12-day period. The MACD is then calculated by subtracting the 26-day EMA from the 12-day EMA producing a signal line of which is used as a buy or sell signal for traders. More information can be found here:  https://www.investopedia.com/terms/m/macd.asp
+\break
+\break
+Lastly, to add to the TA, I integrated the volume traded on the day, which again can give one a visual of how correlated or uncorrelated the price action is to the volume traded on that day.
+\break
+\break
+
+\includegraphics[height=7cm, width = 12cm]{2}
+
+\subsection{Visualization 3}
+In the third visualization, I wanted to analyze the log returns on XOM and the distribution of such returns. From the histogram created, we find that the log returns are normally distributed and can be easily used for Monte Carlo simulation. In such simulation, it is important that the data collected be normally distributed, uncorrelated, and unbiased, as it must be trusted for belief of a proper prediction to be made. As a result, we will be able to predict XOM's stock price using a confidence interval based on historical returns through such simulation.
+\break
+\break
+\includegraphics[height=7cm, width = 12cm]{3}
+\end{document}{}

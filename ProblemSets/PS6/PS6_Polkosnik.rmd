@@ -1,0 +1,89 @@
+---
+title: "PS6"
+author: "Conrad Polkosnik"
+date: "3/6/2018"
+output: word_document
+---
+Downloading Stock data
+```{r}
+# Calling quantmod
+
+library("quantmod")
+
+# Gathering historical stock data for Exxon Mobil since 2015
+
+getSymbols("XOM", src='yahoo', from="2015-01-01")
+
+```
+
+
+```{r}
+# Understanding data pulled
+library(magrittr) #for pipe operator
+
+XOM %>% class()
+
+XOM %>% str()
+
+XOM %>% head()
+```
+
+Data Visualization 1
+```{r}
+# Using Chart Series function to visualize the stock performance
+XOM %>%
+  Ad() %>%
+  chartSeries()
+```
+
+
+Data Visualization 2
+```{r}
+# Adding Fundamental Technical analysis
+
+XOM %>%
+    chartSeries(TA='addBBands();
+                    addBBands(draw="p");
+                    addVo();
+                    addMACD()', 
+                subset='2015-2018',
+                theme="white"
+                )
+```
+
+
+Data Visualization 3
+```{r}
+# Gathering Log of daily returns for Exxon Mobil
+XOM %>%
+    Ad() %>%
+    dailyReturn(type = 'log') %>% 
+    head()
+```
+
+```{r}
+# Using Log returns to analyze distribution and define variable for creation of plot
+XOM_log_returns <- XOM %>%
+    Ad() %>%
+    dailyReturn(type = "log")
+names(XOM_log_returns) <- "XOM.Log.Returns"
+
+# Plotting the log returns using a histogram
+library(ggplot2)
+XOM_log_returns %>%    
+    ggplot(aes(x = XOM.Log.Returns)) + 
+    geom_histogram(bins = 100) + 
+    geom_density() +
+    geom_rug(alpha = 0.5)
+```
+
+
+
+
+
+
+
+
+
+
+
