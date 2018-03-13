@@ -1,0 +1,82 @@
+---
+title: "PS7"
+author: "Conrad Polkosnik"
+date: "3/13/2018"
+output: word_document
+---
+
+Part 4
+```{r}
+# Setting Working Directory
+setwd("/Users/conradpolkosnik/Desktop/School/Semester 10/Data Science for Economists/DScourseS18/ProblemSets/PS7")
+
+# Importing Data
+data <- read.csv("wages.csv")
+```
+
+Part 5
+```{r}
+# Dropping observations where hgc or tenure are missing
+data2 <- na.omit(data)
+data2
+```
+
+
+Part 6
+```{r}
+# Using Stargazer to produce summary statistics on data
+library(stargazer)
+stargazer(data2, type = "latex")
+```
+
+Analysis:
+I would guess that the observations are MCAR, as it just so happens that those values aren't there from the sample of data on wages. There appears to be no relationship between the data points of which are missing from the sample and any of the values in the data set itself. The missing data seems to be just a random subset of data in this data set and is not conditional on any other variable.
+
+Part 7
+Part a. Running regression model with complete cases
+```{r}
+complete.cases(data2$logwage)
+
+RegressionModel<- lm(logwage~., data=data2)
+
+stargazer(RegressionModel, type="latex")
+```
+
+Part b. Mean imputation to fill in log wages
+```{r}
+# Mean imputation for log wages
+data2$logwage[is.na(data2$logwage)] <- mean(data2$logwage)
+
+Model2 <- lm(logwage~. , data=data2)
+Model2
+
+```
+
+Part c. Using mice package to perform multiple imputation regression model
+```{r}
+library(mice) # loading mice package
+
+data2Mice = mice(data2, seed = 12345)
+
+fit<-with(data2Mice, lm(logwage~ hgc+college+tenure+age+married))
+
+round(summary(pool(fit)))
+```
+
+Part d. Using stargazer to create a regression table for both models
+```{r}
+stargazer(RegressionModel, Model2)
+```
+
+Analysis:
+I am not 100% sure if I created the models correctly, but I produced the same statistics and beta values for both models, according to the stargazer regression table. Although I used different commands and different packages to produce the regression models, I still received the same values. For the value of B1, I got 0.062. This value underestimated the coefficient for hgc as the true value was equal to 0.093. In regard to what I believe the mean imputation method has done, I believe it was a major player to underestimating the coefficient, B1. In my opinion, I believe it would be better to underestimate data than to overestimate as if the actual data that was produced in the future was better than what one had hoped for, it just becomes somewhat of a bonus to the creator of the model, rather than a let-down. Underestimating provides somewhat of a reserved and more likely analysis.
+
+
+
+
+
+
+
+
+
+
