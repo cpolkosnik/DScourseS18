@@ -1,0 +1,43 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\title{PS9}
+\author{Conrad Polkosnik }
+\date{April 2,2018}
+
+
+\begin{document}
+\maketitle
+
+\section{Part 5}
+The dimension of the training data is 404 observations of 450 variables.
+
+\section{Part 6}
+\begin{itemize}
+  \item The optimal value of lambda is: 0.0355
+  \item The in-sample RMSE is: 0.2183221
+  \item The out-of sample RMSE is: 0.2213377
+\end{itemize}
+
+\section{Part 7}
+\begin{itemize}
+  \item The optimal value of lambda is: 0.0294
+  \item The in-sample RMSE is: 0.2019355
+  \item The out-of sample RMSE is: 0.2202868
+\end{itemize}
+
+\section{Part 8}
+\begin{itemize}
+  \item The optimal value of lambda is: 0.0282
+  \item The optimal value of alpha is: 0.0376
+  \item The in-sample RMSE is: 0.2004339
+  \item The out-of sample RMSE is 0.2181641
+\end{itemize}
+
+Because the optimal value of alpha is so close to 0, it would lead me to believe that I should use ridge regression to make the prediction.
+
+\section{Part 9}
+You would not be able to estimate a simple linear regression model on the housing.train data as your prediction would underfit completely. With 450 variables to be considered, the best option would be to regularize the data in order to produce a much more precise prediction with regard to the enormous amount of variables. Regularization is the optimal process for trading off bias and variance. With low RMSE values around .2 for each of the models along with lambda values very close to 0, each of the models seems to have a high measure of complexity which would describe a variance on the high side as well as a low bias.
+
+
+\end{document}{}
