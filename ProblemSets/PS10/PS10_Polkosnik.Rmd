@@ -1,0 +1,253 @@
+---
+title: "PS10"
+author: "Conrad Polkosnik"
+date: "4/10/2018"
+output: word_document
+---
+
+Part 4. Importing the starter code
+```{r}
+set.seed(100)
+
+income <- read.table("https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data")
+names(income) <- c("age","workclass","fnlwgt","education","education.num","marital.status","occupation","relationship","race","sex","capital.gain","capital.loss","hours","native.country","high.earner")
+
+# From UC Irvine's website (http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.names)
+#   age: continuous.
+#   workclass: Private, Self-emp-not-inc, Self-emp-inc, Federal-gov, Local-gov, State-gov, Without-pay, Never-worked.
+#   fnlwgt: continuous.
+#   education: Bachelors, Some-college, 11th, HS-grad, Prof-school, Assoc-acdm, Assoc-voc, 9th, 7th-8th, 12th, Masters, 1st-4th, 10th, Doctorate, 5th-6th, Preschool.
+#   education-num: continuous.
+#   marital-status: Married-civ-spouse, Divorced, Never-married, Separated, Widowed, Married-spouse-absent, Married-AF-spouse.
+#   occupation: Tech-support, Craft-repair, Other-service, Sales, Exec-managerial, Prof-specialty, Handlers-cleaners, Machine-op-inspct, Adm-clerical, Farming-fishing, Transport-moving, Priv-house-serv, Protective-serv, Armed-Forces.
+#   relationship: Wife, Own-child, Husband, Not-in-family, Other-relative, Unmarried.
+#   race: White, Asian-Pac-Islander, Amer-Indian-Eskimo, Other, Black.
+#   sex: Female, Male.
+#   capital-gain: continuous.
+#   capital-loss: continuous.
+#   hours-per-week: continuous.
+#   native-country: United-States, Cambodia, England, Puerto-Rico, Canada, Germany, Outlying-US(Guam-USVI-etc), India, Japan, Greece, South, China, Cuba, Iran, Honduras, Philippines, Italy, Poland, Jamaica, Vietnam, Mexico, Portugal, Ireland, France, Dominican-Republic, Laos, Ecuador, Taiwan, Haiti, Columbia, Hungary, Guatemala, Nicaragua, Scotland, Thailand, Yugoslavia, El-Salvador, Trinadad&Tobago, Peru, Hong, Holand-Netherlands.
+
+######################
+# Clean up the data
+######################
+# Drop unnecessary columns
+income$native.country <- NULL
+income$fnlwgt         <- NULL
+# Make sure continuous variables are coded as such
+income$age            <- as.numeric(income$age)
+income$hours          <- as.numeric(income$hours)
+income$education.num  <- as.numeric(income$education.num)
+income$capital.gain   <- as.numeric(income$capital.gain)
+income$capital.loss   <- as.numeric(income$capital.loss)
+# Combine levels of categorical variables that currently have too many levels
+levels(income$education) <- list(Advanced = c("Masters,","Doctorate,","Prof-school,"), Bachelors = c("Bachelors,"), "Some-college" = c("Some-college,","Assoc-acdm,","Assoc-voc,"), "HS-grad" = c("HS-grad,","12th,"), "HS-drop" = c("11th,","9th,","7th-8th,","1st-4th,","10th,","5th-6th,","Preschool,"))
+levels(income$marital.status) <- list(Married = c("Married-civ-spouse,","Married-spouse-absent,","Married-AF-spouse,"), Divorced = c("Divorced,","Separated,"), Widowed = c("Widowed,"), "Never-married" = c("Never-married,"))
+levels(income$race) <- list(White = c("White,"), Black = c("Black,"), Asian = c("Asian-Pac-Islander,"), Other = c("Other,","Amer-Indian-Eskimo,"))
+levels(income$workclass) <- list(Private = c("Private,"), "Self-emp" = c("Self-emp-not-inc,","Self-emp-inc,"), Gov = c("Federal-gov,","Local-gov,","State-gov,"), Other = c("Without-pay,","Never-worked,","?,"))
+levels(income$occupation) <- list("Blue-collar" = c("?,","Craft-repair,","Farming-fishing,","Handlers-cleaners,","Machine-op-inspct,","Transport-moving,"), "White-collar" = c("Adm-clerical,","Exec-managerial,","Prof-specialty,","Sales,","Tech-support,"), Services = c("Armed-Forces,","Other-service,","Priv-house-serv,","Protective-serv,"))
+
+# Break up the data:
+n <- nrow(income)
+train <- sample(n, size = .8*n)
+test  <- setdiff(1:n, train)
+income.train <- income[train,]
+income.test  <- income[test, ]
+```
+
+
+Part 5.
+```{r}
+library(mlr)
+# Classification Task
+Task <- makeClassifTask(id = "taskname", data = income.train, target = "high.earner")
+
+# Setting up prediction algorithms
+
+# Tree
+TreePrediction <- makeLearner("classif.rpart", predict.type = "response")
+
+# Logistic Regression 
+LogicPrediction <- makeLearner("classif.glmnet", predict.type = "response")
+
+# Neural Network
+NeuralPrediction <- makeLearner("classif.nnet", predict.type = "response")
+
+# Naive Bayes 
+BayesPrediction <- makeLearner("classif.naiveBayes", predict.type = "response")
+
+# KKNN
+KKNNPrediction <- makeLearner("classif.kknn", predict.type = "response")
+
+# SVM
+SVMPrediction <- makeLearner("classif.svm", predict.type = "response")
+
+# Set resampling strategy (here let's do 3-fold CV)
+ResampleStrategy <- makeResampleDesc(method = "CV", iters = 3)
+
+# Tuning Strategy: taking 10 random guesses 
+TuneMethod <- makeTuneControlRandom(maxit = 10L)
+
+```
+
+Part 6.
+```{R}
+# Setting up the parameters 
+
+# Tree
+TreeParams<- makeParamSet(
+  makeIntegerParam("minsplit",lower = 10, upper = 50), 
+  makeIntegerParam("minbucket", lower = 5, upper = 50), 
+  makeNumericParam("cp", lower = 0.001, upper = 0.2)) 
+
+# Logistic Regression 
+RegressionParams <- makeParamSet(makeNumericParam("lambda",lower=0,upper=3),
+                                makeNumericParam("alpha",lower=0,upper=1))
+
+# Nueral Network
+NeuralParams<- makeParamSet(makeIntegerParam("size", lower = 1,upper = 10),
+                           makeNumericParam("decay",lower = 0.1,upper = 0.5),
+                           makeIntegerParam("maxit",lower = 1000,upper = 1000))
+# KKNN
+KKNNParams<-makeParamSet(makeIntegerParam("k", lower = 1,upper = 30))
+
+# SVM
+SVMParams<- makeParamSet(makeDiscreteParam("cost", values = 2^c(-2,-1, 0, 1, 2, 10)),
+            makeDiscreteParam("gamma", values = 2^c(-2,-1, 0, 1, 2, 10)))
+
+```
+               
+Part 7.
+```{R}
+# Tree model with f1
+tunedModel_tree <- tuneParams(learner = TreePrediction,
+                         task = Task,
+                         resampling = ResampleStrategy,
+                         measures =list(f1,gmean),
+                         par.set = TreeParams,
+                         control = TuneMethod,
+                         show.info = TRUE)
+
+# Logistic Regression 
+tunedModel_Logic<- tuneParams(learner = LogicPrediction,
+                              task = Task,
+                              resampling = ResampleStrategy,
+                              measures = list(f1,gmean),      
+                              par.set = RegressionParams,
+                             control = TuneMethod,
+                             show.info = TRUE)
+
+
+# Neural Network Model
+tunedModel_Neural<-tuneParams(learner = NeuralPrediction,
+                                 task = Task,
+                                 resampling = ResampleStrategy,
+                                 measures = list(f1,gmean),      
+                                 par.set = NeuralParams,
+                                 control = TuneMethod,
+                                 show.info = TRUE)
+
+
+# KKNN Model
+tunedModel_KKNN<-tuneParams(learner = KKNNPrediction,
+                               task = Task,
+                               resampling = ResampleStrategy,
+                               measures = list(f1,gmean),      
+                               par.set = KKNNParams,
+                               control = TuneMethod,
+                               show.info = TRUE)
+
+
+# SVM Model
+tunedModel_SVM<-tuneParams(learner = SVMPrediction,
+                              task = Task,
+                              resampling = ResampleStrategy,
+                              measures = list(f1,gmean),      
+                              par.set = SVMParams,
+                              control = TuneMethod,
+                              show.info = TRUE)
+
+```
+
+Part 8.
+```{R}
+# Applying the optimal tuning parameter to each algorithm
+
+TreePrediction<-setHyperPars(learner = TreePrediction,par.vals = tunedModel_tree$x)
+LogicPrediction<-setHyperPars(learner = LogicPrediction,par.vals = tunedModel_Logic$x)
+NeuralPrediction<-setHyperPars(learner = NeuralPrediction,par.vals = tunedModel_Neural$x)
+KKNNPrediction<-setHyperPars(learner = KKNNPrediction,par.vals = tunedModel_KKNN$x)
+SVMPrediction<-setHyperPars(learner = SVMPrediction,par.vals = tunedModel_SVM$x)
+
+# Verify performance on cross validated sample sets
+
+TreePerformance<-resample(TreePrediction,Task,ResampleStrategy,measures=list(f1,gmean))
+LogicPerformance<-resample(LogicPrediction,Task,ResampleStrategy,measures=list(f1,gmean))
+NeuralPerformance<-resample(NeuralPrediction,Task,ResampleStrategy,measures=list(f1,gmean))
+KKNNPerformance<-resample(KKNNPrediction,Task,ResampleStrategy,measures=list(f1,gmean))
+SVMPerformance<-resample(SVMPrediction,Task,ResampleStrategy,measures=list(f1,gmean))
+BayesPerformance<-resample(BayesPrediction,Task,ResampleStrategy,measures = list(f1,gmean))
+
+TreePerformance
+LogicPerformance
+NeuralPerformance
+KKNNPerformance
+SVMPerformance
+BayesPerformance
+
+# Training the final model
+
+finalModel.Tree <- train(learner = TreePrediction, task = Task)
+finalModel.Logic<-train(learner=LogicPrediction,task=Task)
+finalModel.Neural<-train(learner=NeuralPrediction,task=Task)
+finalModel.KKNN<-train(learner=KKNNPrediction,task=Task)
+finalModel.SVM<-train(learner=SVMPrediction,task=Task)
+finalModel.Bayes<-train(learner=BayesPrediction,task=Task)
+
+# Predict in the test set
+
+prediction.tree <- predict(finalModel.Tree, newdata = income.test)
+prediction.Logic<-predict(finalModel.Logic,newdata=income.test)
+prediction.Neural<-predict(finalModel.Neural,newdata=income.test)
+prediction.KKNN<-predict(finalModel.KKNN,newdata=income.test)
+prediction.SVM<-predict(finalModel.SVM,newdata=income.test)
+prediction.Bayes<-predict(finalModel.Bayes,newdata=income.test)
+
+prediction.tree
+prediction.Logic
+prediction.Neural
+prediction.KKNN
+prediction.SVM
+prediction.Bayes
+
+# Out of sample performance measurements 
+
+performance(prediction.tree, measures = list(f1, gmean))
+performance(prediction.Logic, measures = list(f1, gmean))
+performance(prediction.Neural, measures = list(f1, gmean))
+performance(prediction.KKNN, measures = list(f1, gmean))
+performance(prediction.SVM, measures = list(f1, gmean))
+performance(prediction.Bayes, measures = list(f1, gmean))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

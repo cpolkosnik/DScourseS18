@@ -1,0 +1,36 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{PS10}
+\author{Conrad Polkosnik (Partners: Alex Skipper and Michael Yuhas)}
+\date{4/10/2018}
+
+
+\usepackage{natbib}
+\usepackage{graphicx}
+
+\begin{document}
+
+\maketitle
+
+\section{Optimal Values of Tuning Parameter}
+\begin{table}[h!]
+\centering
+ \begin{tabular}{||c c c c c||}
+ \hline
+ Algorithm & F1 & gmean & OOS F1 & OOS gmean \\ [0.5ex]
+ \hline\hline
+ Tree & 0.8955 & 0.6578 & 0.8968 & 0.6730\\
+ Logit & 0.8970 & 0.6606 & 0.8986 & 0.6762\\
+ Neural Net & 0.9052 & 0.7548 & 0.9015 & 0.7553\\
+ KKNN & 0.8959 & 0.7447 & 0.8985 & 0.7543\\
+ SVM & 0.9055 & 0.7345 & 0.9090 & 0.7539\\
+ Bayes & 0.8843 & 0.7262 & 0.8825 & 0.7340\\ [1ex]
+\hline
+
+\end{tabular}
+\end{table}
+\subsection{Analysis}
+An efficient way to test a model's assumptions along with comparing its performance against other models is to perform out-of-sample validation. In this problem set, it was found that the Neural Net and SVM algorithms were the most accurate as their respective out-of-sample F1 scores were .9015 and .9090. In regard to the out-of-sample gmean values, the Neural Net, KKNN, SVM, and Bayes algorithms all had relatively the same values. The tree and logit models both were much lower than that of the others, representing that there was less indication of a central tendency or typical set of values in the data set. The gmean helps to essentially provide a meaningful average to the data of interest when running a model. Overall, it was found that the Neural Net and SVM models performed the best, as compared to the rest of the models.
+
+\end{document}
