@@ -1,0 +1,254 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[authoryear]{natbib}
+\title{PS11}
+\author{Conrad Polkosnik }
+\date{April 2018}
+
+\usepackage{natbib}
+\usepackage{graphicx}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+\begin{description}
+\item What is the stock market?
+\item Why is it important?
+\item Who can be a part of the stock market? Who is involved in the markets?
+\item Trading and investing
+\end{description}
+
+\section{Literature Review}
+
+\begin{description}
+\item History/Background of stock price prediction
+\item What have poeple done to predict stock prices?
+\item What techniques have they used?
+\item Did these techniques work?
+\item What methods were good? What methods were bad?
+\item What is technical analysis? How is it used?
+\item Implications of stock prediction
+\end{description}
+
+\section{Data}
+
+\begin{description}
+\item Where did I get the data from?
+\item Is the data trustworthy/unbiased?
+\item What data did I use specifically?
+\item Differences in prediction based on different time periods of historical data
+\item Differences in prediction based on number of simulations
+\end{description}
+
+\section{Methods}
+
+\begin{description}
+\item Quantmod for data
+\item Visualization of overall trend
+\item Fundamental Technical Analysis
+\item Analyzation of distribution (log values, mean, standard deviation)
+\item Random Walk
+\item Monte Carlo Simulation
+\end{description}
+
+\section{Findings}
+
+\begin{description}
+\item Technical Analysis
+\item Log returns
+\item Probabilities and likelihood
+\item Daily average increase
+\item Random Walk (parameters, organization, visualization)
+\item Monte Carlo Simulation
+\end{description}
+
+\section{Conclusions}
+
+\begin{description}
+\item Summarize overall introduction and literature review in regard to the benefits from doing this project.
+\item Summarize data, methods, and findings.
+\item What was the ultimate goal of the project? Was it met? Does it make sense?
+\end{description}
+\bibliographystyle{jpe}
+\nocite{*}
+\bibliography{sample.bib}
+
+\section{Code}
+\begin{verbatim}
+---
+title: "Final Project"
+author: "Conrad Polkosnik"
+date: "3/6/2018"
+output: word_document
+---
+
+Loading Packages
+```{r}
+library(quantmod)   # get stock prices & useful stock analysis functions
+library(xts)        # extensible time series
+library(tidyverse)  # ggplot2, purrr, dplyr, tidyr, readr, tibble
+library(stringr)    # working with strings
+```
+
+
+Downloading Stock Data
+```{r}
+# Calling quantmod
+library("quantmod")
+
+# Gathering historical stock data for Exxon Mobil since 1970
+getSymbols("XOM", src='yahoo', from="1970-01-01")
+
+```
+
+
+```{r}
+# Understanding data pulled
+library(magrittr) #for pipe operator
+
+XOM %>% class()
+
+XOM %>% str()
+
+XOM %>% head()
+```
+
+Visualize Trend
+```{r}
+XOM %>% Ad() %>% chartSeries()
+```
+
+
+Fundamental Technical Analysis
+```{r}
+XOM %>% chartSeries(TA='addBBands();
+                    addBBands(draw="p");
+                    addVo();
+                    addMACD()',
+                    subset='1970-2018',
+                    theme="white"
+                    )
+```
+
+
+Gathering log daily returns for XOM
+```{r}
+XOM %>% Ad() %>% dailyReturn(type = 'log') %>% head()
+```
+
+Using log returns to analyze distribution
+```{r}
+XOMLogReturns <- XOM %>% Ad() %>% dailyReturn(type = "log")
+
+names(XOMLogReturns) <- "XOM.Log.Returns"
+
+# Plotting the log returns using a histogram
+library(ggplot2)
+XOMLogReturns %>% ggplot(aes(x = XOM.Log.Returns)) + geom_histogram(bins = 100) + geom_density() + geom_rug(alpha = 0.5)
+```
+
+Setting probabilities for study of liklihood
+```{r}
+Probabilities <- c(.005, .025, .25, .5, .75, .975, .995)
+
+DistributionalLogReturns <- XOMLogReturns %>% quantile(probs = Probabilities, na.rm = TRUE)
+
+DistributionalLogReturns
+```
+
+
+```{r}
+MeanLogReturns <- mean(XOMLogReturns, na.rm = TRUE)
+StDevLogReturns <- sd(XOMLogReturns, na.rm = TRUE)
+
+MeanLogReturns
+StDevLogReturns
+```
+
+Finding daily average increase or decrease in return
+```{r}
+MeanLogReturns %>% exp()
+```
+Analysis: On average, the investor should expect 0.0657% increase daily in return.
+
+
+Setting Parameters for Random Walk
+```{r}
+# Parameters
+N <- 252
+mu <- MeanLogReturns
+sigma <- StDevLogReturns
+day <- 1:N
+
+InitialPrices <- XOM$XOM.Adjusted[[nrow(XOM$XOM.Adjusted)]]
+
+set.seed(386) # for reproducibility
+Price  <- c(InitialPrices, rep(NA, N-1))
+for(i in 2:N) {
+    Price[i] <- Price[i-1] * exp(rnorm(1, mu, sigma))
+              }
+
+library(tidyverse)
+PriceSimulation <- cbind(day, Price) %>% as_tibble()
+
+# Visualize price simulation
+PriceSimulation %>%
+    ggplot(aes(day, Price)) +
+    geom_line() +
+    ggtitle(str_c("XOM: Simulated Prices for ", N," Trading Days"))
+```
+
+Monte Carlo Simulation for Random Walk
+```{r}
+# Parameters
+N     <- 252 # Number of Stock Price Simulations
+M     <- 100  # Number of Monte Carlo Simulations
+mu    <- MeanLogReturns
+sigma <- StDevLogReturns
+day <- 1:N
+InitialPrices <- XOM$XOM.Adjusted[[nrow(XOM$XOM.Adjusted)]]
+
+# Simulate prices using for loop and Monte Carlo Matrix
+set.seed(386)
+MonteCarloMatrix <- matrix(nrow = N, ncol = M)
+for (j in 1:M) {
+    MonteCarloMatrix[[1, j]] <- InitialPrices
+    for(i in 2:N) {
+        MonteCarloMatrix[[i, j]] <- MonteCarloMatrix[[i - 1, j]] * exp(rnorm(1, mu, sigma))
+                  }
+               }
+
+# Organizing fata frame and format
+PriceSimulation <- cbind(day, MonteCarloMatrix) %>% as_tibble()
+nm <- str_c("Sim.", seq(1, M))
+nm <- c("Day", nm)
+names(PriceSimulation) <- nm
+PriceSimulation <- PriceSimulation %>%
+    gather(key = "Simulation", value = "Stock.Price", -(Day))
+
+# Visualization
+PriceSimulation %>%
+    ggplot(aes(x = Day, y = Stock.Price, Group = Simulation)) +
+    geom_line(alpha = 0.1) +
+    ggtitle(str_c("XOM: ", M,
+                  " Monte Carlo Simulations for Prices Over ", N,
+                  " Trading Days"))
+```
+
+Stock price estimation and likelihood
+```{r}
+EstimatedStockPrices <- PriceSimulation %>% filter(Day == max(Day))
+
+Probabilities <- c(.005, .025, .25, .5, .75, .975, .995)
+
+DistributionalEstimatedStockPrices <- quantile(EstimatedStockPrices$Stock.Price, probs = Probabilities)
+
+DistributionalEstimatedStockPrices %>% round(2)
+```
+
+\end{verbatim}
+
+\end{document}
