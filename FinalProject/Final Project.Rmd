@@ -1,0 +1,181 @@
+---
+title: "Final Project"
+author: "Conrad Polkosnik"
+date: "4/20/2018"
+output: word_document
+---
+
+# Loading Packages
+```{r}
+library(quantmod)   # for stock prices & stock analysis
+library(xts)        # extensible time series 
+library(tidyverse)  # ggplot2,dplyr, tidyr, readr, tibble
+library(stringr)    # working with strings
+library (magrittr)  # for pipe operator
+```
+
+
+# Downloading Stock Data
+```{r}
+# Calling quantmod
+library("quantmod")
+
+# Gathering historical stock data for Exxon Mobil since January 2nd, 1970
+getSymbols("XOM", src='yahoo', from="1970-01-02")
+
+```
+
+# Understanding scraped data pulled
+```{r}
+# Calling magrittr
+library(magrittr) #for pipe operator
+
+XOM %>% class()
+
+XOM %>% str()
+
+XOM %>% head()
+```
+
+# Visualize trend of stock price over time
+```{r}
+XOM %>% Ad() %>% chartSeries()
+```
+
+
+# Technical Analysis for more recent movement in 2018
+```{r}
+XOM %>% chartSeries(TA='addBBands();
+                    addBBands(draw="p");
+                    addVo();
+                    addMACD()',
+                    subset='2018',
+                    theme="white"
+                    )
+```
+
+
+# Gathering log daily returns for XOM
+```{r}
+XOM %>% Ad() %>% dailyReturn(type = 'log') %>% head()
+```
+
+# Using log returns to analyze distribution
+```{r}
+XOMLogReturns <- XOM %>% Ad() %>% dailyReturn(type = "log")
+
+names(XOMLogReturns) <- "XOM.Log.Returns"
+
+# Plotting the log returns using a histogram to analyze distribution
+library(ggplot2)
+XOMLogReturns %>% ggplot(aes(x = XOM.Log.Returns)) + geom_histogram(bins = 100) + geom_density() + geom_rug(alpha = 0.5)
+```
+
+# Setting probabilities for study of liklihood
+```{r}
+Probabilities <- c(.005, .025, .25, .5, .75, .975, .995)
+
+DistributionalLogReturns <- XOMLogReturns %>% quantile(probs = Probabilities, na.rm = TRUE)
+
+DistributionalLogReturns
+```
+
+# Finding Mean and Standard Dev. Log returns
+```{r}
+MeanLogReturns <- mean(XOMLogReturns, na.rm = TRUE)
+StDevLogReturns <- sd(XOMLogReturns, na.rm = TRUE)
+
+MeanLogReturns
+StDevLogReturns
+```
+
+# Finding daily average increase or decrease in return
+```{r}
+MeanLogReturns %>% exp()
+```
+
+
+# Random Walk
+```{r}
+# Setting Parameters
+N <- 252 # number of trading days
+mu <- MeanLogReturns
+sigma <- StDevLogReturns
+day <- 1:N
+
+# Setting variable of interest
+InitialPrices <- XOM$XOM.Adjusted[[nrow(XOM$XOM.Adjusted)]]
+
+# Setting RNG and simulating
+set.seed(386) # for reproducibility
+Price  <- c(InitialPrices, rep(NA, N-1))
+for(i in 2:N) {
+    Price[i] <- Price[i-1] * exp(rnorm(1, mu, sigma)) # using rnorm since we have normal distribution
+              }
+
+# Calling tidyverse
+library(tidyverse)
+PriceSimulation <- cbind(day, Price) %>% as_tibble()
+
+# Visualize price simulation
+PriceSimulation %>%
+    ggplot(aes(day, Price)) +
+    geom_line() +
+    ggtitle(str_c("XOM: Simulated Prices for ", N," Trading Days"))
+```
+
+# Monte Carlo Simulation for Random Walk
+```{r}
+# Setting Parameters
+N     <- 252 # Number of Stock Price Simulations
+M     <- 100  # Number of Monte Carlo Simulations   
+mu    <- MeanLogReturns
+sigma <- StDevLogReturns
+day <- 1:N
+
+# Setting variable of interest
+InitialPrices <- XOM$XOM.Adjusted[[nrow(XOM$XOM.Adjusted)]]
+
+# Simulate prices using for loop and Monte Carlo Matrix
+set.seed(386)
+MonteCarloMatrix <- matrix(nrow = N, ncol = M)
+for (j in 1:M) {
+    MonteCarloMatrix[[1, j]] <- InitialPrices
+    for(i in 2:N) {
+        MonteCarloMatrix[[i, j]] <- MonteCarloMatrix[[i - 1, j]] * exp(rnorm(1, mu, sigma))
+                  }
+               }
+
+# Organizing data frame and format
+PriceSimulation <- cbind(day, MonteCarloMatrix) %>% as_tibble() 
+nm <- str_c("Sim.", seq(1, M))
+nm <- c("Day", nm)
+
+names(PriceSimulation) <- nm
+PriceSimulation <- PriceSimulation %>%
+    gather(key = "Simulation", value = "Stock_Price", -(Day))
+
+# Visualization
+PriceSimulation %>%
+    ggplot(aes(x = Day, y = Stock_Price, Group = Simulation)) + 
+    geom_line(alpha = 0.1) +
+    ggtitle(str_c("XOM: ", M, 
+                  " Monte Carlo Simulations for Prices Over ", N, 
+                  " Trading Days"))
+```
+
+# Stock price estimation and likelihood
+```{r}
+EstimatedStockPrices <- PriceSimulation %>% filter(Day == max(Day)) # estimating stock price at end of 252 simulated trading days
+
+Probabilities <- c(.005, .025, .25, .5, .75, .975, .995)
+
+DistributionalEstimatedStockPrices <- quantile(EstimatedStockPrices$Stock_Price, probs = Probabilities) # estimating stock prices based on probabilities of likelihood
+
+DistributionalEstimatedStockPrices %>% round(2) # rounding off to two decimal places
+```
+
+
+
+
+
